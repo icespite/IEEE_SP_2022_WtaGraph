@@ -5,4 +5,7 @@ tmp/*
 *label.npy
 *.pickle
 *.edgelist
-test.py
+*test*
+output/*
+*bak*
+logs/*
