@@ -1,6 +1,5 @@
 import random
 import time
-import torch
 import numpy as np
 import torch as th
 import torch.nn.functional as F
@@ -27,6 +26,10 @@ def get_train_mask(labels, ratio):
 
 
 def start_train(args):
+    print("\n************start normal training************")
+    args.model_name = (
+        args.model_name + " " + time.strftime("%m-%d %H:%M:%S", time.localtime())
+    )
     gloader = GraphLoader()
     (
         g,
@@ -119,7 +122,7 @@ def start_train(args):
             e_label_part = edge_subgraph.edata["label"]
             # edge_predictions = model(edge_subgraph, blocks, input_features)
 
-            train_mask = get_train_mask(e_label_part,0.8)
+            train_mask = get_train_mask(e_label_part, 0.8)
             train_mask = train_mask.cuda()
             n_logits, e_logits = model(edge_subgraph, nf_part, ef_part)
             loss = loss_fcn(e_logits[train_mask], e_label_part[train_mask])
@@ -171,6 +174,10 @@ def start_train(args):
 
 
 def start_train_cv(args):
+    args.model_name = (
+        args.model_name + "_cv " + time.strftime("%m-%d %H:%M:%S", time.localtime())
+    )
+    print("\n************start CV training************")
     gloader = GraphLoader()
     g, nf, ef, e_label, _, _, _, _, _, _ = gloader.load_graph(args)
 
@@ -211,6 +218,7 @@ def start_train_cv(args):
     )
     print(model)
     model.cuda()
+    EPOCH = 0
     for train_index, test_index in kf.split(e_label, e_label):
         fold += 1
         print("\nfold #: ", str(fold))
@@ -288,14 +296,15 @@ def start_train_cv(args):
                     model.state_dict(),
                     "./output/best.model." + args.model_name + ".fold." + str(fold),
                 )
-            writer.add_scalar("acc", acc, epoch)
-            writer.add_scalar("loss", loss.item(), epoch)
+            writer.add_scalar("acc", acc, EPOCH)
+            writer.add_scalar("loss", loss.item(), EPOCH)
             print(
                 "Epoch {:05d} | Time(s) {:.4f} | Loss {:.4f} | Accuracy {:.4f} | "
                 "ETputs(KTEPS) {:.2f}".format(
                     epoch, np.mean(dur), loss.item(), acc, n_edges / np.mean(dur) / 1000
                 )
             )
+            EPOCH = EPOCH + 1
 
         # load the best model
         best_model = WTAGNN(
@@ -322,7 +331,9 @@ def start_train_cv(args):
         total_precision += precision
         total_acc += acc
         total_recall += recall
-
+    writer.add_scalar("acc_fold", total_acc / args.fold * 100, fold)
+    writer.add_scalar("precision_fold", total_precision / args.fold * 100, fold)
+    writer.add_scalar("recall_fold", total_recall / args.fold * 100, fold)
     print("\n************training done! Averaged model performance************")
     print(
         "acc/pre/rec: ",

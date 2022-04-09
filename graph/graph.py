@@ -27,9 +27,9 @@ class GraphLoader:
         )
         # 数据格式：{'id': 0, 'mongo_id': '5f191035c3ff9981dc1c1e7b', 'site_id': '1', 'site': 'google.com', 'src': 'www.google.com', 'dst': 'google.com', 'url': 'http://google.com/', 'track': '0'}
         with open(id_edge_map_list_path, "rb") as f:
-            id_edge_map = pickle.load(f)
+            id_edge_map_list = pickle.load(f)
 
-        return id_node_map, id_edge_map
+        return id_node_map, id_edge_map_list
 
     def load_graph(self, args):
         print("\n************loading the specified graph and feature data************")

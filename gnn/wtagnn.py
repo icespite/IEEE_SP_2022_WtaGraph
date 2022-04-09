@@ -56,8 +56,9 @@ class EdgeApplyModule(nn.Module):
             self.bias.data.uniform_(-stdv, stdv)
 
     def forward(self, edges):
-        ### msg pass strategy: ef = ef + nb_ef + srcdst_nf
-        tmp_ef = edges.data["ef"] + edges.dst["nb_ef"]  # mean/max-fy at msg_reduce
+        # msg pass strategy: ef = ef + nb_ef + srcdst_nf
+        # mean/max-fy at msg_reduce
+        tmp_ef = edges.data["ef"] + edges.dst["nb_ef"]
         srcdst_nf = (edges.src["nf"] + edges.dst["nf"]) / 2
         ef = self.my_dense(th.cat([tmp_ef, srcdst_nf], 1))
 

@@ -46,7 +46,6 @@ def get_args():
 
 args = get_args()
 print(args)
-args.model_name = time.strftime("%m-%d %H:%M:%S", time.localtime())
 
 ######################## NOTE #####################################
 # Before running the following code,
@@ -67,7 +66,7 @@ start_train(args)
 ### Mode 2: cross-validation training
 ### with the default args, you will train a model on the full graph with 5 fold cv
 
-# start_train_cv(args)
+start_train_cv(args)
 
 
 ######################## eval pre-trained WTA-GNN model #############
@@ -83,6 +82,6 @@ eval_saved_model(args)
 
 # args.graph_name = 'rand5k' ## in this mode, graph_name meant to be the training graph
 # args.g_to_merge = 'full'   ## in this mode, g_to_merge meant to be the full graph (check more comments in below func)
-# eval_model_inductive(args)
+eval_model_inductive(args)
 
 print("\ndone...")

@@ -6,7 +6,7 @@ import numpy as np
 from graph.graph import GraphLoader
 from gnn.wtagnn import WTAGNN
 
-### print out the performance related numbers
+# print out the performance related numbers
 def performance(pred, labels, acc=None):
     print(
         "\n************model performance on {:d} test edges************".format(
@@ -60,8 +60,8 @@ def evaluate(model, g, nf, ef, labels, mask):
         return correct.item() * 1.0 / len(labels), indices, labels
 
 
-### load the pretrained and predict some of edges in the training graph
-### for testing purpose only
+# load the pretrained and predict some of edges in the training graph
+# for testing purpose only
 def eval_saved_model(args):
     gloader = GraphLoader()
     if args.g_to_merge is not None:  # load two graph and merge together
@@ -111,28 +111,39 @@ def eval_saved_model(args):
     )
 
 
-### in the inductive evaluation, we first load the pre-trained model and the corresponding training graph
-### then for each a test site, we find each edge's neighbor in the training graph
-### we next apply the trained model to the testing graph and predict those edges that never seen before during training
+# in the inductive evaluation, we first load the pre-trained model and the corresponding training graph
+# then for each a test site, we find each edge's neighbor in the training graph
+# we next apply the trained model to the testing graph and predict those edges that never seen before during training
+# 在归纳评估中，我们首先加载预训练的模型和相应的训练图
+# 然后对于每个测试点，我们在训练图中找到每个边的邻居
+# 我们接下来将训练好的模型应用于测试图，并预测那些在训练期间从未见过的边缘
 def eval_model_inductive(args):
     gloader = GraphLoader()
-    ### load the training graph
+    # load the training graph
     train_g, train_g_nf, train_g_ef, train_g_e_label, _, _, _ = gloader.load_graph(args)
-    train_g_id_node_map, train_g_id_edge_map = gloader.load_node_edge_map(args)
+    train_g_id_node_map, train_g_id_edge_map_list = gloader.load_node_edge_map(args)
     train_g.ndata["nf"], train_g.edata["ef"], train_g.edata["e_label"] = (
         train_g_nf,
         train_g_ef,
         train_g_e_label,
     )
 
-    ### load the full graph, where we have all testing edges from all testing sites
-    ### note: you can indeen build a graph for each testing site and load it separately
-    ### here I am loading the full graph for convinence
-    ### since later I will extract edges/nodes for each testing site
-    ### it works the same if you load edges/nodes separately for each of your testing site
-    args.graph_name = "full"  # set it to full so that we can load the full graph; it was set to the train_g orginally
+    # load the full graph, where we have all testing edges from all testing sites
+    # note: you can indeen build a graph for each testing site and load it separately
+    # here I am loading the full graph for convinence
+    # since later I will extract edges/nodes for each testing site
+    # it works the same if you load edges/nodes separately for each of your testing site
+
+    # 加载完整的图，其中我们有来自所有测试点的所有测试边线
+    # 注意：你可以为每个测试点建立一个图，并分别加载它。
+    # 这里我加载的是全图，以便于理解
+    # 因为以后我将提取每个测试点的边/节点
+    # 如果你为每个测试点分别加载边/节点，效果是一样的
+
+    # set it to full so that we can load the full graph; it was set to the train_g orginally
+    args.graph_name = "full"
     full_g, full_g_nf, full_g_ef, full_g_e_label, _, _, _ = gloader.load_graph(args)
-    full_g_id_node_map, full_g_id_edge_map = gloader.load_node_edge_map(args)
+    full_g_id_node_map, full_g_id_edge_map_list = gloader.load_node_edge_map(args)
     full_g.ndata["nf"], full_g.edata["ef"], full_g.edata["e_label"] = (
         full_g_nf,
         full_g_ef,
@@ -143,7 +154,7 @@ def eval_model_inductive(args):
     full_g_node_id_map = {v: k for k, v in full_g_id_node_map.items()}
     train_g_dst_eids_map = {}
     train_g_src_eids_map = {}  # key is node str, values are edge ids point to this node
-    for e in train_g_id_edge_map:
+    for e in train_g_id_edge_map_list:
         train_g_src_eids_map.setdefault(e["src"], []).append(e["id"])
         train_g_dst_eids_map.setdefault(e["dst"], []).append(e["id"])
 
@@ -156,28 +167,28 @@ def eval_model_inductive(args):
     test_sites_map = (
         {}
     )  # key is the id of testing site, value is a list of edges of this testing site
-    train_g_eid_set = set(e["id"] for e in train_g_id_edge_map)
+    train_g_eid_set = set(e["id"] for e in train_g_id_edge_map_list)
     # those edges not exist in train_g are our testing edges in the inductive setting
     raw_test_eids = [
-        e["id"] for e in full_g_id_edge_map if e["id"] not in train_g_eid_set
+        e["id"] for e in full_g_id_edge_map_list if e["id"] not in train_g_eid_set
     ]
     for raw_test_eid in raw_test_eids:
-        site_id = full_g_id_edge_map[raw_test_eid][
+        site_id = full_g_id_edge_map_list[raw_test_eid][
             "site_id"
         ]  # get the site id of this unseen (testing) edge
         test_sites_map.setdefault(site_id, []).append(raw_test_eid)
 
     print(
         "edges # in general",
-        len(full_g_id_edge_map),
+        len(full_g_id_edge_map_list),
         "sites in general",
-        len(set(e["site_id"] for e in full_g_id_edge_map)),
+        len(set(e["site_id"] for e in full_g_id_edge_map_list)),
     )
     print(
         "edges # used for training",
-        len(train_g_id_edge_map),
+        len(train_g_id_edge_map_list),
         "sites for training",
-        len(set(e["site_id"] for e in train_g_id_edge_map)),
+        len(set(e["site_id"] for e in train_g_id_edge_map_list)),
     )
     print(
         "edges # for testing",
@@ -206,8 +217,8 @@ def eval_model_inductive(args):
         edge_labels = []
         # here we extract the testing site's edges and nodes from the full graph
         for eid in test_sites_map[site_id]:
-            src = full_g_id_edge_map[eid]["src"]
-            dst = full_g_id_edge_map[eid]["dst"]
+            src = full_g_id_edge_map_list[eid]["src"]
+            dst = full_g_id_edge_map_list[eid]["dst"]
             node_set.add(src)
             node_set.add(dst)
             if src not in node_id_map:
@@ -258,16 +269,17 @@ def eval_model_inductive(args):
             if (
                 node in train_g_dst_eids_map
             ):  # this node exist in train_g, so we have neighbors for this node, so we add edges
-                ### adding nodes/edges once
-                for eid in train_g_dst_eids_map[node]:  # option 1: choose all neighbor
+                # adding nodes/edges once
+                # option 1: choose all neighbor
+                for eid in train_g_dst_eids_map[node]:
                     # for eid in train_g_dst_eids_map[node][:10]: #option2: choose 10 neighbor
-                    src_in_train_g = train_g_id_edge_map[eid]["src"]
+                    src_in_train_g = train_g_id_edge_map_list[eid]["src"]
                     if (
                         src_in_train_g not in node_id_map
                     ):  # new node, so add; Or already added
                         node_id_map[
                             src_in_train_g
-                        ] = cur_nid  ### allocate this nid to the newly added (thou not happen yet)
+                        ] = cur_nid  # allocate this nid to the newly added (thou not happen yet)
                         new_node_feats.append(
                             train_g.ndata["nf"][train_g_node_id_map[src_in_train_g]]
                             .clone()
@@ -298,9 +310,9 @@ def eval_model_inductive(args):
                 num_of_edge_before_adding : g.number_of_edges()
             ] = th.stack(new_edge_labels)
 
-        ## with above code, we added neighbor nodes/edges (if any) to the testing graph
-        ## however, we only want to predict the edges of current testing site, not those neighbors
-        ## So, below we use the test_mask to achieve this goal
+        # with above code, we added neighbor nodes/edges (if any) to the testing graph
+        # however, we only want to predict the edges of current testing site, not those neighbors
+        # So, below we use the test_mask to achieve this goal
         print("After adding neighbors, the graph: ", g, "\n")
 
         nf = g.ndata.pop("nf")
@@ -326,8 +338,8 @@ def eval_model_inductive(args):
         best_model.load_state_dict(th.load("./output/best.model." + args.model_name))
         acc, predictions, labels = evaluate(best_model, g, nf, ef, e_label, test_mask)
 
-        ## here i am not printing the performace immediately as there might be ZeroDivisionError
-        ## instead, i put predictions of each testing site into a list
+        # here i am not printing the performace immediately as there might be ZeroDivisionError
+        # instead, i put predictions of each testing site into a list
         results += [
             (eid, edge_labels[idx].item(), predictions[idx].item())
             for idx, eid in enumerate(test_sites_map[site_id])
@@ -336,9 +348,9 @@ def eval_model_inductive(args):
         # if ct == 15: break
         # ct+=1
 
-    ### we completed predict edges in each testing site;
-    ### meanwhile, we have raw predictions saved in the results list
-    ### now let print the performance out
+    # we completed predict edges in each testing site;
+    # meanwhile, we have raw predictions saved in the results list
+    # now let print the performance out
     labels = [r[1] for r in results]
     predictions = [r[2] for r in results]
     precision, recall, tnr, tpr, f1 = performance(predictions, labels)
