@@ -47,41 +47,7 @@ def get_args():
 args = get_args()
 print(args)
 
-######################## NOTE #####################################
-# Before running the following code,
-# make sure you have downloaded our dataset (graph, node/edge features)
-# and put them in the right places in the data folder.
-# Those placeholders in the data folder should make this easy.
-# Meanwhile, make sure the args are set correctly,
-# e.g., set the output model name, set the graph_name
-
-
-######################## train WTA-GNN model ########################
-### Mode 1: regular training
-### with the default args, you will train a model on the full graph
 
 start_train(args)
-
-
-### Mode 2: cross-validation training
-### with the default args, you will train a model on the full graph with 5 fold cv
-
-start_train_cv(args)
-
-
-######################## eval pre-trained WTA-GNN model #############
-### Mode 1: eval a pre-trained model on the full training graph
-### with the default args, you will evaluate the pre-trained model on the full graph
-
 eval_saved_model(args)
-
-
-### Mode 2: eval  a pre-trained model inductively on unseen (during training) edges
-### with the default args, eval_model_inductive() will not work as g_to_merge is None by default
-### with the following args, you will eval edges in testing websites using a pre-trained model on the rand5k graph
-
-# args.graph_name = 'rand5k' ## in this mode, graph_name meant to be the training graph
-# args.g_to_merge = 'full'   ## in this mode, g_to_merge meant to be the full graph (check more comments in below func)
-eval_model_inductive(args)
-
 print("\ndone...")

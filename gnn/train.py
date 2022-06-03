@@ -172,8 +172,7 @@ def start_train(args):
         predictions.tolist(), labels.tolist(), acc
     )
 
-
-def start_train_cv(args):
+ 
     args.model_name = (
         args.model_name + "_cv " + time.strftime("%m-%d %H:%M:%S", time.localtime())
     )
